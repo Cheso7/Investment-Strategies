@@ -3,13 +3,14 @@
 """
 import pandas as pd
 
-def most_shorted(stats_cy,tickers):
-    pcnt_short_by_float = stats_cy.iloc[24]*100
-    pcnt_short_outstanding = stats_cy.iloc[25]*100
+def most_shorted(stats_cy, tickers):
+    stats_cy = stats_cy.transpose()
+    pcnt_short_by_float = stats_cy.iloc[24]
+    pcnt_short_outstanding = stats_cy.iloc[25]
     no_of_shorts = stats_cy.iloc[22]
     no_of_shares = stats_cy.iloc[19]
     no_shares_short_outstanding = no_of_shorts*pcnt_short_outstanding
-    short_outstanding_ratio = (no_shares_short_outstanding/no_of_shares)*100 
+    short_outstanding_ratio = (no_shares_short_outstanding/no_of_shares) 
     df_short = pd.DataFrame([pcnt_short_by_float, 
                             pcnt_short_outstanding, 
                             no_shares_short_outstanding, 
@@ -20,7 +21,7 @@ def most_shorted(stats_cy,tickers):
                                                     'Short/Outstanding Ratio'])
     df_short_t = df_short.transpose()
     short_sorted = df_short_t.sort_values(by = 'Short/Outstanding Ratio', ascending=False)
-    top10_shares_short = short_sorted[:10]
+    top10_shares_short = short_sorted[:50]
     print(top10_shares_short)
 
     return top10_shares_short

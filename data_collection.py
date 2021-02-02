@@ -1,13 +1,13 @@
 """
 @author: Cheso7
 """
-
 import yfinance as yf
 import datetime as dt
 import copy
 import bs4 as bs
 import requests
 import pandas as pd
+import investing_database
 
 def get_tickers(tickers):
     if type(tickers) is not list:
@@ -43,7 +43,7 @@ def get_financials(tickers):
     financial_dir_py2 = {}
 
     for ticker in tickers:
-
+        print('Scraping financial data for: ', ticker)
         temp_dir = {}
         temp_dir2 = {}
         temp_dir3 = {}
@@ -101,9 +101,12 @@ def get_financials(tickers):
     return financials_cy, financials_py, financials_py2
 
 def get_statistics(tickers):
-    financial_data = {}
 
+    db_connection = investing_database.database_connect()
+    Database = investing_database.Database(db_connection)
+    
     for ticker in tickers:
+        print('Scraping company statistics for: ', ticker)
         temp_dir ={}
         url = 'https://in.finance.yahoo.com/quote/'+ticker+'/key-statistics'
         page = requests.get(url)
@@ -118,26 +121,25 @@ def get_statistics(tickers):
                 if len(row.get_text(separator='|').split("|")[0:2])>0:
                     temp_dir[row.get_text(separator='|').split("|")[0]]=row.get_text(separator='|').split("|")[-1]
 
-        financial_data[ticker] = temp_dir 
+        ticker_statistics = pd.DataFrame(temp_dir, index = [ticker])
+        ticker_statistics_clean = info_filter_stats(ticker_statistics)
+        Database.create_table_from_df(ticker_statistics_clean,'companystats')
 
-    statistics = pd.DataFrame(financial_data)
-    statistics = statistics.drop('EBITDA') 
-    return statistics
+    return 
 
 def info_filter_stats(df):
-    tickers = df.columns.tolist()
-    df[tickers] = df[tickers].replace({',': ''}, regex=True)
-    df[tickers] = df[tickers].replace({'M': 'E+06'}, regex=True)
-    df[tickers] = df[tickers].replace({'B': 'E+09'}, regex=True)
-    df[tickers] = df[tickers].replace({'T': 'E+12'}, regex=True)
-    df[tickers] = df[tickers].replace({'%': 'E-02'}, regex=True)  
-    for ticker in df.columns:
-        df[ticker] = pd.to_numeric(df[ticker].values,errors='coerce')
-    tickers = df.columns      
+
+    df = df.replace({',': ''}, regex=True)
+    df = df.replace({'M': 'E+06'}, regex=True)
+    df = df.replace({'B': 'E+09'}, regex=True)
+    df = df.replace({'T': 'E+12'}, regex=True)
+    df = df.replace({'%': 'E-02'}, regex=True)
+    df = df.apply(pd.to_numeric, errors='ignore')
+    
     return df
 
 def info_filter_financials(df):
-    tickers = df.columns.tolist()
+    tickers = df.index.tolist()
     df[tickers] = df[tickers].replace({',': ''}, regex=True)
     df[tickers] = df[tickers].replace({'M': 'E+03'}, regex=True)
     df[tickers] = df[tickers].replace({'B': 'E+06'}, regex=True)

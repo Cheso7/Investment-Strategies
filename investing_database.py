@@ -1,26 +1,35 @@
-import mysql.connector
+import pandas as pd
+import pymysql
+import configparser
 
-from mysql.connector import Error
+from sqlalchemy import create_engine
 
-def create_server_connection(host_name, user_name, user_password):
-    connection = None
-    try: 
-        connection = mysql.connector.connect(
-            host = host_name,
-            user = user_name,
-            passwd = user_password
-        )
-        print("MySQL Database Connection Successful")
-    except Error as err:
-        print(f"Error: '{err}'")     
-    return connection
+def database_connect():
+    config = configparser.ConfigParser()
+    config.read("config.txt")
+    user = config.get("configuration","user")
+    password = config.get("configuration","password")
+    server = config.get("configuration","server")
+    sqlEngine = create_engine("mysql+pymysql://" + user + ":" + password + "@127.0.0.1/"+ server, pool_recycle=3600)
+    db_connection = sqlEngine.connect()
 
-connection = create_server_connection("localhost", "root", "7Synzacky11!")
+    return db_connection
 
-def create_database(connection, query):
-    cursor = connection.cursor()
-    try:
-        cursor.execute(query)
-        print("Database created successfully")
-    except Error as err:
-        print(f"Error: '{err}'")
+class Database:
+    def __init__(self, db_connection):
+        self.db_connection = db_connection
+
+    def create_table_from_df(self, df, table_name):
+        print(df)
+        try:
+            df = df.to_sql(table_name, self.db_connection, if_exists='append')
+        except ValueError as vx:
+            print(vx)
+        except Exception as ex:   
+            print(ex)
+        else:
+            print("Table %s created successfully."%table_name)
+
+    def create_df_from_table(self, table_name):
+        df = pd.read_sql('SELECT * FROM '+table_name, self.db_connection)
+        return df
