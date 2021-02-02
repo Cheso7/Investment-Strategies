@@ -2,3 +2,5 @@
 /.pylint.d
 /.vscode
 config.txt
+__pycache__/investing_data.cpython-37.pyc
+__pycache__/investing_data.cpython-37.pyc
