@@ -1,7 +1,7 @@
 import pandas as pd
 import pymysql
 import configparser
-
+import sqlalchemy
 from sqlalchemy import create_engine
 
 def database_connect():
@@ -19,10 +19,10 @@ class Database:
     def __init__(self, db_connection):
         self.db_connection = db_connection
 
-    def create_table_from_df(self, df, table_name):
+    def create_table_from_df(self, df, table_name, index_label):
         print(df)
         try:
-            df = df.to_sql(table_name, self.db_connection, if_exists='append')
+            df = df.to_sql(table_name, self.db_connection, if_exists='append', dtype={None:sqlalchemy.types.VARCHAR(5), 'Dividend date':sqlalchemy.types.VARCHAR(20)})
         except ValueError as vx:
             print(vx)
         except Exception as ex:   

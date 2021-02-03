@@ -1,7 +1,6 @@
 '''
 @author: Cheso7
-TODO: Fix bug with regards to storing first row of SQL Table.
-TODO: Add SQL table storage for other data collection functions
+TODO: Fix bug with regards to different columns for financial data.
 TODO: Check magnitude of info_filter for financial data
 TODO: Check investing functions work with SQL Data table imported
 '''
@@ -24,14 +23,18 @@ tickers = ["AMD","NVDA"]
 years = 5 # years of data to collect
 interval = '1mo'
 
-data_collection.get_statistics(tickers)
+# data_collection.get_statistics(tickers)
+data_collection.get_financials(tickers)
 
 def main():
     db_connection = investing_database.database_connect()
     Database = investing_database.Database(db_connection)
     # ohlc = data_collection.ohlc(tickers, years, interval)
     # financials_cy, financials_py, financials_py2 = data_collection.get_financials(tickers)
-    statistics_dir_cy = Database.create_df_from_table('companystats')   
+    # statistics_dir_cy = Database.create_df_from_table('companystats')   
+    financial_dir_cy = Database.create_df_from_table('financial_dir_cy')   
+    financial_dir_py = Database.create_df_from_table('financial_dir_py')   
+    financial_dir_py2 = Database.create_df_from_table('financial_dir_py2')   
 
     # df_cy = data_collection.info_filter_financials(financials_cy)
     # df_py = data_collection.info_filter_financials(financials_py)
@@ -40,7 +43,7 @@ def main():
 
     # piotroski = investing_strategy.piotroski(df_cy, df_py, dy_py2,tickers)
     # magic = investing_strategy.magic_formula(df_cy, stats_cy, tickers)
-    shorted = investing_strategy.most_shorted(statistics_dir_cy, tickers)
+    # shorted = investing_strategy.most_shorted(statistics_dir_cy, tickers)
     return
 
 main()

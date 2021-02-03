@@ -38,9 +38,9 @@ def ohlc(tickers, years, interval):
     return ohlc
 
 def get_financials(tickers):
-    financial_dir_cy = {} #directory to store current year's information
-    financial_dir_py = {} #directory to store last year's information
-    financial_dir_py2 = {}
+    
+    db_connection = investing_database.database_connect()
+    Database = investing_database.Database(db_connection)
 
     for ticker in tickers:
         print('Scraping financial data for: ', ticker)
@@ -89,16 +89,21 @@ def get_financials(tickers):
                 temp_dir[row.get_text(separator='|').split("|")[0]]=row.get_text(separator='|').split("|")[2]
                 temp_dir2[row.get_text(separator='|').split("|")[0]]=row.get_text(separator='|').split("|")[3]
                 temp_dir3[row.get_text(separator='|').split("|")[0]]=row.get_text(separator='|').split("|")[4]
-        
-        financial_dir_cy[ticker] = temp_dir
-        financial_dir_py[ticker] = temp_dir2
-        financial_dir_py2[ticker] = temp_dir3
 
-    financials_cy = pd.DataFrame(financial_dir_cy)
-    financials_py = pd.DataFrame(financial_dir_py)
-    financials_py2 = pd.DataFrame(financial_dir_py2)
+        financial_dir_cy = pd.DataFrame(temp_dir, index = [ticker])
+        financial_dir_cy_clean = info_filter_financials(financial_dir_cy)
 
-    return financials_cy, financials_py, financials_py2
+        financial_dir_py = pd.DataFrame(temp_dir2, index = [ticker])
+        financial_dir_py_clean = info_filter_financials(financial_dir_py)
+
+        financial_dir_py2 = pd.DataFrame(temp_dir3, index = [ticker])
+        financial_dir_py2_clean = info_filter_financials(financial_dir_py2)
+
+        Database.create_table_from_df(financial_dir_cy_clean,'financial_dir_cy', 'Tickers')
+        Database.create_table_from_df(financial_dir_py_clean,'financial_dir_py', 'Tickers')
+        Database.create_table_from_df(financial_dir_py2_clean,'financial_dir_py2', 'Tickers')
+
+    return
 
 def get_statistics(tickers):
 
@@ -123,34 +128,36 @@ def get_statistics(tickers):
 
         ticker_statistics = pd.DataFrame(temp_dir, index = [ticker])
         ticker_statistics_clean = info_filter_stats(ticker_statistics)
-        Database.create_table_from_df(ticker_statistics_clean,'companystats')
+        ticker_statistics['Ticker'] = ticker
+        Database.create_table_from_df(ticker_statistics_clean,'companystats', 'Tickers')
 
     return 
 
 def info_filter_stats(df):
-
+    df.columns = df.columns.str.strip()
+    df.columns.tolist() 
     df = df.replace({',': ''}, regex=True)
+    df = df.replace({'N/A': float("NAN")}, regex=True)
     df = df.replace({'M': 'E+06'}, regex=True)
     df = df.replace({'B': 'E+09'}, regex=True)
     df = df.replace({'T': 'E+12'}, regex=True)
     df = df.replace({'%': 'E-02'}, regex=True)
-    df = df.apply(pd.to_numeric, errors='ignore')
-    
+    df = df.apply(pd.to_numeric, errors='coerce')
     return df
 
 def info_filter_financials(df):
-    tickers = df.index.tolist()
-    df[tickers] = df[tickers].replace({',': ''}, regex=True)
-    df[tickers] = df[tickers].replace({'M': 'E+03'}, regex=True)
-    df[tickers] = df[tickers].replace({'B': 'E+06'}, regex=True)
-    df[tickers] = df[tickers].replace({'T': 'E+9'}, regex=True)
-    df[tickers] = df[tickers].replace({'%': 'E-02'}, regex=True)  
-
-    for ticker in df.columns:
-        df[ticker] = pd.to_numeric(df[ticker].values,errors='coerce')
-        df[ticker] = df[ticker].multiply(1000)
-    tickers = df.columns      
+    df.columns = df.columns.str.strip()
+    df.columns.tolist()
+    df = df.replace({',': ''}, regex=True)
+    df = df.replace({'N/A': float("NAN")}, regex=True)
+    df = df.replace({'M': 'E+03'}, regex=True)
+    df = df.replace({'B': 'E+06'}, regex=True)
+    df = df.replace({'T': 'E+09'}, regex=True)
+    df = df.replace({'%': 'E-02'}, regex=True)
+    df = df.apply(pd.to_numeric, errors='coerce')
+    df = df.multiply(1000)
     return df
+
 
     
 # financials_stats =  ["Total revenue",
