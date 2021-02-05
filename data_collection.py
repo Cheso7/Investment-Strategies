@@ -41,12 +41,13 @@ def get_financials(tickers):
     
     db_connection = investing_database.database_connect()
     Database = investing_database.Database(db_connection)
-
+    index = 0
     for ticker in tickers:
         print('Scraping financial data for: ', ticker)
         temp_dir = {}
         temp_dir2 = {}
         temp_dir3 = {}
+
 
         #Getting balance sheet data from yahoo finance for the given ticker
         url = 'https://in.finance.yahoo.com/quote/'+ticker+'/balance-sheet?p='+ticker
@@ -90,19 +91,20 @@ def get_financials(tickers):
                 temp_dir2[row.get_text(separator='|').split("|")[0]]=row.get_text(separator='|').split("|")[3]
                 temp_dir3[row.get_text(separator='|').split("|")[0]]=row.get_text(separator='|').split("|")[4]
 
-        financial_dir_cy = pd.DataFrame(temp_dir, index = [ticker])
-        financial_dir_cy_clean = info_filter_financials(financial_dir_cy)
+        financial_dir_cy = pd.DataFrame(temp_dir, index=[index])
+        financial_dir_cy_clean = info_filter_financials(financial_dir_cy, ticker)
 
-        financial_dir_py = pd.DataFrame(temp_dir2, index = [ticker])
-        financial_dir_py_clean = info_filter_financials(financial_dir_py)
+        financial_dir_py = pd.DataFrame(temp_dir2, index=[index])  
+        financial_dir_py_clean = info_filter_financials(financial_dir_py, ticker)
 
-        financial_dir_py2 = pd.DataFrame(temp_dir3, index = [ticker])
-        financial_dir_py2_clean = info_filter_financials(financial_dir_py2)
+        financial_dir_py2 = pd.DataFrame(temp_dir3, index=[index])
+        financial_dir_py2_clean = info_filter_financials(financial_dir_py2, ticker)
 
         Database.create_table_from_df(financial_dir_cy_clean,'financial_dir_cy', 'Tickers')
         Database.create_table_from_df(financial_dir_py_clean,'financial_dir_py', 'Tickers')
         Database.create_table_from_df(financial_dir_py2_clean,'financial_dir_py2', 'Tickers')
 
+        index += 1 
     return
 
 def get_statistics(tickers):
@@ -127,13 +129,11 @@ def get_statistics(tickers):
                     temp_dir[row.get_text(separator='|').split("|")[0]]=row.get_text(separator='|').split("|")[-1]
 
         ticker_statistics = pd.DataFrame(temp_dir, index = [ticker])
-        ticker_statistics_clean = info_filter_stats(ticker_statistics)
+        ticker_statistics_clean = info_filter_stats(ticker_statistics, ticker)
         ticker_statistics['Ticker'] = ticker
         Database.create_table_from_df(ticker_statistics_clean,'companystats', 'Tickers')
-
-    return 
-
-def info_filter_stats(df):
+        
+def info_filter_stats(df, ticker):
     df.columns = df.columns.str.strip()
     df.columns.tolist() 
     df = df.replace({',': ''}, regex=True)
@@ -143,9 +143,10 @@ def info_filter_stats(df):
     df = df.replace({'T': 'E+12'}, regex=True)
     df = df.replace({'%': 'E-02'}, regex=True)
     df = df.apply(pd.to_numeric, errors='coerce')
+    df['Ticker'] = ticker
     return df
 
-def info_filter_financials(df):
+def info_filter_financials(df, ticker):
     df.columns = df.columns.str.strip()
     df.columns.tolist()
     df = df.replace({',': ''}, regex=True)
@@ -154,8 +155,10 @@ def info_filter_financials(df):
     df = df.replace({'B': 'E+06'}, regex=True)
     df = df.replace({'T': 'E+09'}, regex=True)
     df = df.replace({'%': 'E-02'}, regex=True)
+    df = df.drop(labels=['Assets', 'Current assets', 'Cash'], axis=1, errors={'ignore'})
     df = df.apply(pd.to_numeric, errors='coerce')
     df = df.multiply(1000)
+    df['Ticker'] = ticker
     return df
 
 

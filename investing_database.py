@@ -20,15 +20,24 @@ class Database:
         self.db_connection = db_connection
 
     def create_table_from_df(self, df, table_name, index_label):
-        print(df)
         try:
-            df = df.to_sql(table_name, self.db_connection, if_exists='append', dtype={None:sqlalchemy.types.VARCHAR(5), 'Dividend date':sqlalchemy.types.VARCHAR(20)})
-        except ValueError as vx:
-            print(vx)
-        except Exception as ex:   
-            print(ex)
-        else:
-            print("Table %s created successfully."%table_name)
+            #this will fail if there is a new column
+            df = df.to_sql(table_name, self.db_connection, if_exists='append', index=False) 
+        except:
+            data = pd.read_sql('SELECT * FROM '+table_name, self.db_connection)
+            df2 = pd.concat([data,df])
+            df2.to_sql(table_name, self.db_connection, if_exists = 'replace', index=False)
+        return
+
+        # print(df)
+        # try:
+        #     df = df.to_sql(table_name, self.db_connection, if_exists='append', dtype={None:sqlalchemy.types.VARCHAR(5), 'Dividend date':sqlalchemy.types.VARCHAR(20)})
+        # except ValueError as vx:
+        #     print(vx)
+        # except Exception as ex:   
+        #     print(ex)
+        # else:
+        #     print("Table %s created successfully."%table_name)
 
     def create_df_from_table(self, table_name):
         df = pd.read_sql('SELECT * FROM '+table_name, self.db_connection)

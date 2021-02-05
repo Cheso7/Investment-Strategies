@@ -1,10 +1,10 @@
 """
 @author: Cheso7
 """
+from configparser import Interpolation
 import pandas as pd
 
 def most_shorted(stats_cy, tickers):
-    stats_cy = stats_cy.transpose()
     pcnt_short_by_float = stats_cy.iloc[24]
     pcnt_short_outstanding = stats_cy.iloc[25]
     no_of_shorts = stats_cy.iloc[22]
@@ -28,8 +28,6 @@ def most_shorted(stats_cy, tickers):
 
 def piotroski(df_cy, df_py, df_py2, tickers):
     f_score = {}
-    tickers = df_cy.columns
-    
     for ticker in tickers:
         ROA_FS = int(df_cy.loc["Net income available to common shareholders",ticker]/((df_cy.loc["Total assets",ticker]+df_py.loc["Total assets",ticker])/2) > 0)
         CFO_FS = int(df_cy.loc["Net cash provided by operating activities",ticker] > 0)
@@ -47,9 +45,9 @@ def piotroski(df_cy, df_py, df_py2, tickers):
     return f_score_sorted
 
 def magic_formula(df_cy, df_stats, tickers):
-
+    df_stats.drop('EBITDA', inplace=True)
     all_stats_df = df_cy.append(df_stats)
-    
+
     # calculating relevant financial metrics for each stock
     transpose_df = all_stats_df.transpose()
     final_stats_df = pd.DataFrame()
@@ -74,7 +72,9 @@ def magic_formula(df_cy, df_stats, tickers):
     print("------------------------------------------------")
     print("Value stocks based on Greenblatt's Magic Formula")
     print(value_stocks)
-    
+
+    final_stats_df.fillna(0, inplace=True)
+
     # finding highest dividend yield stocks
     high_dividend_stocks = final_stats_df.sort_values("Forward annual dividend yield",ascending=False).iloc[:,6]
     print("------------------------------------------------")
@@ -84,7 +84,7 @@ def magic_formula(df_cy, df_stats, tickers):
     # # Magic Formula & Dividend yield combined
     final_stats_df["CombRank"] = final_stats_df["EarningYield"].rank(ascending=False,method='first') \
                                   +final_stats_df["ROC"].rank(ascending=False,method='first')  \
-                                  +final_stats_df["Forward annual dividend yield"].rank(ascending=False,method='first')
+                                  +final_stats_df["Forward annual dividend yield"].rank(ascending=False,numeric_only=True,method='first')
     final_stats_df["CombinedRank"] = final_stats_df["CombRank"].rank(method='first')
     value_high_div_stocks = final_stats_df.sort_values("CombinedRank").iloc[:,[2,4,6,8]]
     print("------------------------------------------------")
