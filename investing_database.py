@@ -29,16 +29,6 @@ class Database:
             df2.to_sql(table_name, self.db_connection, if_exists = 'replace', index=False)
         return
 
-        # print(df)
-        # try:
-        #     df = df.to_sql(table_name, self.db_connection, if_exists='append', dtype={None:sqlalchemy.types.VARCHAR(5), 'Dividend date':sqlalchemy.types.VARCHAR(20)})
-        # except ValueError as vx:
-        #     print(vx)
-        # except Exception as ex:   
-        #     print(ex)
-        # else:
-        #     print("Table %s created successfully."%table_name)
-
     def create_df_from_table(self, table_name):
         df = pd.read_sql('SELECT * FROM '+table_name, self.db_connection)
         return df
